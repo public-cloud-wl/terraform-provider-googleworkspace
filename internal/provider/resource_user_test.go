@@ -594,10 +594,6 @@ resource "googleworkspace_user" "my-new-user" {
     language_code = "en"
   }
 
-  ssh_public_keys {
-    key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPM4pxpbPpjuBocS6qlW0BHRYgH5xmv/yVrANZR9lc1N"
-  }
-
   websites {
     primary = false
     type = "blog"

@@ -632,69 +632,69 @@ func resourceUser() *schema.Resource {
 				},
 			},
 			// TODO: (mbang) AtLeastOneOf (https://github.com/hashicorp/terraform-plugin-sdk/issues/470)
-			"posix_accounts": {
-				Description: "A list of POSIX account information for the user.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"account_id": {
-							Description: "A POSIX account field identifier.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"gecos": {
-							Description: "The GECOS (user information) for this account.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"gid": {
-							Description: "The default group ID.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"home_directory": {
-							Description: "The path to the home directory for this account.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"operating_system_type": {
-							Description: "The operating system type for this account. " +
-								"Acceptable values: `linux`, `unspecified`, `windows`.",
-							Type:     schema.TypeString,
-							Optional: true,
-							ValidateDiagFunc: validation.ToDiagFunc(
-								validation.StringInSlice([]string{"linux", "unspecified", "windows"}, false),
-							),
-						},
-						"primary": {
-							Description: "If this is user's primary account within the SystemId.",
-							Type:        schema.TypeBool,
-							Optional:    true,
-						},
-						"shell": {
-							Description: "The path to the login shell for this account.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"system_id": {
-							Description: "System identifier for which account Username or Uid apply to.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"uid": {
-							Description: "The POSIX compliant user ID.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"username": {
-							Description: "The username of the account.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-					},
-				},
-			},
+			//			"posix_accounts": {
+			//				Description: "A list of POSIX account information for the user.",
+			//				Type:        schema.TypeList,
+			//				Optional:    true,
+			//				Elem: &schema.Resource{
+			//					Schema: map[string]*schema.Schema{
+			//						"account_id": {
+			//							Description: "A POSIX account field identifier.",
+			//							Type:        schema.TypeString,
+			//							Optional:    true,
+			//						},
+			//						"gecos": {
+			//							Description: "The GECOS (user information) for this account.",
+			//							Type:        schema.TypeString,
+			//							Optional:    true,
+			//						},
+			//						"gid": {
+			//							Description: "The default group ID.",
+			//							Type:        schema.TypeString,
+			//							Optional:    true,
+			//						},
+			//						"home_directory": {
+			//							Description: "The path to the home directory for this account.",
+			//							Type:        schema.TypeString,
+			//							Optional:    true,
+			//						},
+			//						"operating_system_type": {
+			//							Description: "The operating system type for this account. " +
+			//								"Acceptable values: `linux`, `unspecified`, `windows`.",
+			//							Type:     schema.TypeString,
+			//							Optional: true,
+			//							ValidateDiagFunc: validation.ToDiagFunc(
+			//								validation.StringInSlice([]string{"linux", "unspecified", "windows"}, false),
+			//							),
+			//						},
+			//						"primary": {
+			//							Description: "If this is user's primary account within the SystemId.",
+			//							Type:        schema.TypeBool,
+			//							Optional:    true,
+			//						},
+			//						"shell": {
+			//							Description: "The path to the login shell for this account.",
+			//							Type:        schema.TypeString,
+			//							Optional:    true,
+			//						},
+			//						"system_id": {
+			//							Description: "System identifier for which account Username or Uid apply to.",
+			//							Type:        schema.TypeString,
+			//							Optional:    true,
+			//						},
+			//						"uid": {
+			//							Description: "The POSIX compliant user ID.",
+			//							Type:        schema.TypeString,
+			//							Optional:    true,
+			//						},
+			//						"username": {
+			//							Description: "The username of the account.",
+			//							Type:        schema.TypeString,
+			//							Optional:    true,
+			//						},
+			//					},
+			//				},
+			//			},
 			"creation_time": {
 				Description: "The time the user's account was created. The value is in ISO 8601 date and time format. " +
 					"The time is the complete date plus hours, minutes, and seconds in the form " +
@@ -713,30 +713,30 @@ func resourceUser() *schema.Resource {
 			},
 			// TODO: (mbang) Add ValidateDiagFunc for max size when it's allowed on lists
 			// (https://github.com/hashicorp/terraform-plugin-sdk/issues/156)
-			"ssh_public_keys": {
-				Description: "A list of SSH public keys. The maximum allowed data size is 10Kb.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"expiration_time_usec": {
-							Description: "An expiration time in microseconds since epoch.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"fingerprint": {
-							Description: "A SHA-256 fingerprint of the SSH public key.",
-							Type:        schema.TypeString,
-							Computed:    true,
-						},
-						"key": {
-							Description: "An SSH public key.",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-					},
-				},
-			},
+			//			"ssh_public_keys": {
+			//				Description: "A list of SSH public keys. The maximum allowed data size is 10Kb.",
+			//				Type:        schema.TypeList,
+			//				Optional:    true,
+			//				Elem: &schema.Resource{
+			//					Schema: map[string]*schema.Schema{
+			//						"expiration_time_usec": {
+			//							Description: "An expiration time in microseconds since epoch.",
+			//							Type:        schema.TypeString,
+			//							Optional:    true,
+			//						},
+			//						"fingerprint": {
+			//							Description: "A SHA-256 fingerprint of the SSH public key.",
+			//							Type:        schema.TypeString,
+			//							Computed:    true,
+			//						},
+			//						"key": {
+			//							Description: "An SSH public key.",
+			//							Type:        schema.TypeString,
+			//							Required:    true,
+			//						},
+			//					},
+			//				},
+			//			},
 			// TODO: (mbang) Add ValidateDiagFunc for max size when it's allowed on lists
 			// (https://github.com/hashicorp/terraform-plugin-sdk/issues/156)
 			"websites": {
@@ -1032,22 +1032,22 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	userObj := directory.User{
-		PrimaryEmail:               primaryEmail,
-		Password:                   generated_password,
-		HashFunction:               d.Get("hash_function").(string),
-		Suspended:                  d.Get("suspended").(bool),
-		ChangePasswordAtNextLogin:  d.Get("change_password_at_next_login").(bool),
-		IpWhitelisted:              d.Get("ip_allowlist").(bool),
-		Name:                       expandName(d.Get("name")),
-		Emails:                     expandInterfaceObjects(d.Get("emails")),
-		ExternalIds:                expandInterfaceObjects(d.Get("external_ids")),
-		Relations:                  expandInterfaceObjects(d.Get("relations")),
-		Addresses:                  expandInterfaceObjects(d.Get("addresses")),
-		Organizations:              expandInterfaceObjects(d.Get("organizations")),
-		Phones:                     expandInterfaceObjects(d.Get("phones")),
-		Languages:                  expandInterfaceObjects(d.Get("languages")),
-		PosixAccounts:              expandInterfaceObjects(d.Get("posix_accounts")),
-		SshPublicKeys:              expandInterfaceObjects(d.Get("ssh_public_keys")),
+		PrimaryEmail:              primaryEmail,
+		Password:                  generated_password,
+		HashFunction:              d.Get("hash_function").(string),
+		Suspended:                 d.Get("suspended").(bool),
+		ChangePasswordAtNextLogin: d.Get("change_password_at_next_login").(bool),
+		IpWhitelisted:             d.Get("ip_allowlist").(bool),
+		Name:                      expandName(d.Get("name")),
+		Emails:                    expandInterfaceObjects(d.Get("emails")),
+		ExternalIds:               expandInterfaceObjects(d.Get("external_ids")),
+		Relations:                 expandInterfaceObjects(d.Get("relations")),
+		Addresses:                 expandInterfaceObjects(d.Get("addresses")),
+		Organizations:             expandInterfaceObjects(d.Get("organizations")),
+		Phones:                    expandInterfaceObjects(d.Get("phones")),
+		Languages:                 expandInterfaceObjects(d.Get("languages")),
+		//		PosixAccounts:              expandInterfaceObjects(d.Get("posix_accounts")),
+		//		SshPublicKeys:              expandInterfaceObjects(d.Get("ssh_public_keys")),
 		Websites:                   expandInterfaceObjects(d.Get("websites")),
 		Locations:                  expandInterfaceObjects(d.Get("locations")),
 		IncludeInGlobalAddressList: d.Get("include_in_global_address_list").(bool),
@@ -1190,10 +1190,10 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	d.Set("suspension_reason", user.SuspensionReason)
 	d.Set("thumbnail_photo_url", user.ThumbnailPhotoUrl)
 	d.Set("languages", flattenInterfaceObjects(user.Languages))
-	d.Set("posix_accounts", flattenInterfaceObjects(user.PosixAccounts))
+	//	d.Set("posix_accounts", flattenInterfaceObjects(user.PosixAccounts))
 	d.Set("creation_time", user.CreationTime)
 	d.Set("non_editable_aliases", user.NonEditableAliases)
-	d.Set("ssh_public_keys", flattenInterfaceObjects(user.SshPublicKeys))
+	//	d.Set("ssh_public_keys", flattenInterfaceObjects(user.SshPublicKeys))
 	d.Set("websites", flattenInterfaceObjects(user.Websites))
 	d.Set("locations", flattenInterfaceObjects(user.Locations))
 	d.Set("include_in_global_address_list", user.IncludeInGlobalAddressList)
@@ -1343,15 +1343,15 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		userObj.Languages = languages
 	}
 
-	if d.HasChange("posix_accounts") {
-		posixAccounts := expandInterfaceObjects(d.Get("posix_accounts"))
-		userObj.PosixAccounts = posixAccounts
-	}
-
-	if d.HasChange("ssh_public_keys") {
-		sshPublicKeys := expandInterfaceObjects(d.Get("ssh_public_keys"))
-		userObj.SshPublicKeys = sshPublicKeys
-	}
+	//	if d.HasChange("posix_accounts") {
+	//		posixAccounts := expandInterfaceObjects(d.Get("posix_accounts"))
+	//		userObj.PosixAccounts = posixAccounts
+	//	}
+	//
+	//	if d.HasChange("ssh_public_keys") {
+	//		sshPublicKeys := expandInterfaceObjects(d.Get("ssh_public_keys"))
+	//		userObj.SshPublicKeys = sshPublicKeys
+	//	}
 
 	if d.HasChange("websites") {
 		websites := expandInterfaceObjects(d.Get("websites"))
