@@ -50,8 +50,8 @@ func (t *retryTransport) RoundTrip(req *http.Request) (resp *http.Response, resp
 	}
 
 	attempts := 0
-	backoff := time.Millisecond * 500
-	nextBackoff := time.Millisecond * 500
+	backoff := time.Millisecond * 6000
+	nextBackoff := time.Millisecond * 6000
 
 	// VCR depends on the original request body being consumed, so
 	// consume here. Since this won't affect the request itself,
