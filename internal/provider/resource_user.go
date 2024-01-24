@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"net/mail"
 	"reflect"
 	"strconv"
@@ -1100,8 +1101,8 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		newUser, retryErr := usersService.Get(d.Id()).IfNoneMatch(cc.lastEtag).Do()
 		if googleapi.IsNotModified(retryErr) {
 			cc.currConsistent += 1
-		} else if isNotFound(retryErr) {
-			// user was not found yet therefore setting currConsistent back to null value
+		} else if gerr, ok := retryErr.(*googleapi.Error); ok && (gerr.Code == http.StatusNotFound || gerr.Code == http.StatusForbidden) {
+			// If a user is not found (404) or not authorized (403), it might be due to eventual consistency, so reset consistency state and retry.
 			cc.currConsistent = 0
 		} else if retryErr != nil {
 			return fmt.Errorf("unexpected error during retries of %s: %s", cc.resourceType, retryErr)
@@ -1109,7 +1110,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 			cc.handleNewEtag(newUser.Etag)
 		}
 
-		return fmt.Errorf("timed out while waiting for %s to be inserted", cc.resourceType)
+		return fmt.Errorf("timed out while waiting for %s to reach a consistent state", cc.resourceType)
 	})
 
 	if err != nil {
