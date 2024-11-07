@@ -143,6 +143,12 @@ func resourceUser() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"wait_for_consistency": {
+				Description: "Indicates whether to wait for consistency after creating the user.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 			"primary_email": {
 				Description: "The user's primary email address. The primaryEmail must be unique and cannot be an alias " +
 					"of another user.",
@@ -1085,38 +1091,41 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	d.SetId(user.Id)
+	waitForConsistency := d.Get("wait_for_consistency").(bool)
+	if waitForConsistency {
 
-	// INSERT will respond with the User that will be created, however, it is eventually consistent
-	// After INSERT, the etag is updated along with the User (and any aliases),
-	// once we get a consistent etag, we can feel confident that our User is also consistent
-	cc := consistencyCheck{
-		resourceType: "user",
-		timeout:      d.Timeout(schema.TimeoutCreate),
-	}
-	err = retryTimeDuration(ctx, d.Timeout(schema.TimeoutCreate), func() error {
-		var retryErr error
-
-		if cc.reachedConsistency(1) {
-			return nil
+		// INSERT will respond with the User that will be created, however, it is eventually consistent
+		// After INSERT, the etag is updated along with the User (and any aliases),
+		// once we get a consistent etag, we can feel confident that our User is also consistent
+		cc := consistencyCheck{
+			resourceType: "user",
+			timeout:      d.Timeout(schema.TimeoutCreate),
 		}
+		err = retryTimeDuration(ctx, d.Timeout(schema.TimeoutCreate), func() error {
+			var retryErr error
 
-		newUser, retryErr := usersService.Get(d.Id()).IfNoneMatch(cc.lastEtag).Do()
-		if googleapi.IsNotModified(retryErr) {
-			cc.currConsistent += 1
-		} else if gerr, ok := retryErr.(*googleapi.Error); ok && (gerr.Code == http.StatusNotFound || gerr.Code == http.StatusForbidden) {
-			// If a user is not found (404) or not authorized (403), it might be due to eventual consistency, so reset consistency state and retry.
-			cc.currConsistent = 0
-		} else if retryErr != nil {
-			return fmt.Errorf("unexpected error during retries of %s: %s", cc.resourceType, retryErr)
-		} else {
-			cc.handleNewEtag(newUser.Etag)
+			if cc.reachedConsistency(1) {
+				return nil
+			}
+
+			newUser, retryErr := usersService.Get(d.Id()).IfNoneMatch(cc.lastEtag).Do()
+			if googleapi.IsNotModified(retryErr) {
+				cc.currConsistent += 1
+			} else if gerr, ok := retryErr.(*googleapi.Error); ok && (gerr.Code == http.StatusNotFound || gerr.Code == http.StatusForbidden) {
+				// If a user is not found (404) or not authorized (403), it might be due to eventual consistency, so reset consistency state and retry.
+				cc.currConsistent = 0
+			} else if retryErr != nil {
+				return fmt.Errorf("unexpected error during retries of %s: %s", cc.resourceType, retryErr)
+			} else {
+				cc.handleNewEtag(newUser.Etag)
+			}
+
+			return fmt.Errorf("timed out while waiting for %s to reach a consistent state", cc.resourceType)
+		})
+
+		if err != nil {
+			return diag.FromErr(err)
 		}
-
-		return fmt.Errorf("timed out while waiting for %s to reach a consistent state", cc.resourceType)
-	})
-
-	if err != nil {
-		return diag.FromErr(err)
 	}
 
 	diags = resourceUserUpdate(ctx, d, meta)
