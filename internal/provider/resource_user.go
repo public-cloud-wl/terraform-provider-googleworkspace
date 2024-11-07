@@ -147,7 +147,7 @@ func resourceUser() *schema.Resource {
 				Description: "Indicates whether to wait for consistency after creating the user.",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
+				Default:     true,
 			},
 			"primary_email": {
 				Description: "The user's primary email address. The primaryEmail must be unique and cannot be an alias " +
@@ -1128,13 +1128,8 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 	}
 
-	diags = resourceUserUpdate(ctx, d, meta)
-	if diags.HasError() {
-		return diags
-	}
-
 	log.Printf("[DEBUG] Finished creating User %q: %#v", d.Id(), primaryEmail)
-	return resourceUserRead(ctx, d, meta)
+	return diags
 }
 
 func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
