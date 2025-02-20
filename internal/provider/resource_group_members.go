@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	directory "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/googleapi"
 )
 
 const deliverySettingsDefault = "ALL_MAIL"
@@ -308,7 +309,14 @@ func resourceGroupMembersUpdate(ctx context.Context, d *schema.ResourceData, met
 
 			_, err := membersService.Insert(groupId, &memberObj).Do()
 			if err != nil {
-				return diag.FromErr(err)
+				// Check if the error is a "Member already exists" error (409 Conflict)
+				googleError, ok := err.(*googleapi.Error)
+				if ok && googleError.Code == 409 && strings.Contains(googleError.Message, "Member already exists") {
+					log.Printf("[DEBUG] Member %q already exists in group %s, skipping creation.", memberObj.Email, groupId)
+					continue // Skip to the next member
+				} else {
+					return diag.FromErr(err) // Return other errors
+				}
 			}
 			continue
 		}
