@@ -10,9 +10,27 @@ import (
 
 	directory "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/chromepolicy/v1"
+	cloudidentity "google.golang.org/api/cloudidentity/v1"
 	"google.golang.org/api/gmail/v1"
 	"google.golang.org/api/groupssettings/v1"
 )
+
+func GetCloudIdentityDevicesService(cloudIdentityService *cloudidentity.Service) (*cloudidentity.DevicesService, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	log.Printf("[INFO] Instantiating Google Cloud Identity Devices service")
+	devicesService := cloudIdentityService.Devices
+	if devicesService == nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Cloud Identity Devices Service could not be created.",
+		})
+
+		return nil, diags
+	}
+
+	return devicesService, diags
+}
 
 func GetChromePoliciesService(chromePolicyService *chromepolicy.Service) (*chromepolicy.CustomersPoliciesService, diag.Diagnostics) {
 	var diags diag.Diagnostics
