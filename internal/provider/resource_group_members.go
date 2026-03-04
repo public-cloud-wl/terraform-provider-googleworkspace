@@ -326,7 +326,11 @@ func resourceGroupMembersUpdate(ctx context.Context, d *schema.ResourceData, met
 			log.Printf("[DEBUG] Remove Group Member %q from group %s: %#v", name, groupId, memberKey)
 			err := membersService.Delete(groupId, memberKey).Do()
 			if err != nil {
-				return diag.FromErr(err)
+				// Ignore 404 errors - member already removed (e.g., user deleted from workspace)
+				if !isApiErrorWithCode(err, 404) {
+					return diag.FromErr(err)
+				}
+				log.Printf("[WARN] Group Member %q not found in group %s (already removed)", memberKey, groupId)
 			}
 			continue
 		}
@@ -344,7 +348,12 @@ func resourceGroupMembersUpdate(ctx context.Context, d *schema.ResourceData, met
 
 		_, err := membersService.Update(groupId, change.Old["id"].(string), &memberObj).Do()
 		if err != nil {
-			return diag.FromErr(err)
+			// Ignore 404 errors - member already removed (e.g., user deleted from workspace)
+			// In this case, we'll try to re-add the member in the next refresh
+			if !isApiErrorWithCode(err, 404) {
+				return diag.FromErr(err)
+			}
+			log.Printf("[WARN] Group Member %q not found in group %s during update, will be recreated on next run", change.Old["id"].(string), groupId)
 		}
 
 		d.SetId(fmt.Sprintf("groups/%s", groupId))
