@@ -29,6 +29,7 @@ var defaultErrorRetryPredicates = []RetryErrorPredicateFunc{
 	// Common error codes
 	isCommonRetryableErrorCode,
 	isRateLimitExceeded,
+	isForbiddenError,
 }
 
 /** END GLOBAL ERROR RETRY PREDICATES HERE **/
@@ -125,4 +126,21 @@ func isNotFound(err error) bool {
 	}
 	ae, ok := err.(*googleapi.Error)
 	return ok && ae.Code == http.StatusNotFound
+}
+
+// isForbiddenError retries 403 "forbidden" responses, which Google Workspace
+// returns transiently when a resource (e.g. a group) has not yet propagated
+// before a dependent operation (e.g. adding an alias) is attempted.
+func isForbiddenError(err error) (bool, string) {
+	gerr, ok := err.(*googleapi.Error)
+	if !ok {
+		return false, ""
+	}
+
+	if gerr.Code == 403 && strings.Contains(gerr.Error(), "forbidden") {
+		log.Printf("[DEBUG] Dismissed an error as retryable based on forbidden error: %s", err)
+		return true, "Retryable forbidden error"
+	}
+
+	return false, ""
 }
