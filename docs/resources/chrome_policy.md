@@ -3,12 +3,12 @@
 page_title: "googleworkspace_chrome_policy Resource - terraform-provider-googleworkspace"
 subcategory: ""
 description: |-
-  Chrome Policy resource in the Terraform Googleworkspace provider. Currently only supports policies not requiring additionalTargetKeys. Chrome Policy Schema resides under the https://www.googleapis.com/auth/chrome.management.policy client scope.
+  Chrome Policy resource supporting organizational unit and group targets for policies not requiring additionalTargetKeys. Chrome Policy Schema resides under the https://www.googleapis.com/auth/chrome.management.policy client scope.
 ---
 
 # googleworkspace_chrome_policy (Resource)
 
-Chrome Policy resource in the Terraform Googleworkspace provider. Currently only supports policies not requiring additionalTargetKeys. Chrome Policy Schema resides under the `https://www.googleapis.com/auth/chrome.management.policy` client scope.
+Chrome Policy resource in the Terraform Googleworkspace provider. Supports organizational unit and group targets for policies not requiring additionalTargetKeys. Chrome Policy Schema resides under the `https://www.googleapis.com/auth/chrome.management.policy` client scope.
 
 ## Example Usage
 
@@ -19,7 +19,7 @@ resource "googleworkspace_org_unit" "example" {
 }
 
 resource "googleworkspace_chrome_policy" "example" {
-  org_unit_id = googleworkspace_org_unit.test.id
+  org_unit_id = googleworkspace_org_unit.example.id
   policies {
     schema_name = "chrome.users.MaxConnectionsPerProxy"
     schema_values = {
@@ -34,8 +34,13 @@ resource "googleworkspace_chrome_policy" "example" {
 
 ### Required
 
+- Exactly one of `org_unit_id` or `group_id` must be set.
+- `policies` (Block List, Min: 1) Policies to set for the selected target (see [below for nested schema](#nestedblock--policies))
+
+### Optional
+
 - `org_unit_id` (String) The target org unit on which this policy is applied.
-- `policies` (Block List, Min: 1) Policies to set for the org unit (see [below for nested schema](#nestedblock--policies))
+- `group_id` (String) The Google Workspace group ID receiving this policy override.
 
 ### Read-Only
 

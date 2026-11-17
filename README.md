@@ -6,7 +6,7 @@
 ![Status: Tech Preview](https://img.shields.io/badge/status-experimental-EAAA32) [![Releases](https://img.shields.io/github/release/hashicorp/terraform-provider-googleworkspace.svg)](https://github.com/hashicorp/terraform-provider-googleworkspace/releases)
 [![LICENSE](https://img.shields.io/github/license/hashicorp/terraform-provider-googleworkspace.svg)](https://github.com/hashicorp/terraform-provider-googleworkspace/blob/main/LICENSE)![Unit tests](https://github.com/hashicorp/terraform-provider-googleworkspace/workflows/Unit%20tests/badge.svg)
 
-This Google Workspace provider for Terraform allows you to manage domains, users, and groups in your Google Workspace.
+This Google Workspace provider for Terraform allows you to manage domains, users, groups, Chrome policies, and Google Workspace DLP rules and detectors. DLP management uses the Cloud Identity Policy API and requires its policy OAuth scope and a super administrator.
 
 This provider is a technical preview, which means it's a community supported project. It still requires extensive testing and polishing to mature into a HashiCorp officially supported project. Please [file issues](https://github.com/hashicorp/terraform-provider-googleworkspace/issues/new/choose) generously and detail your experience while using the provider. We welcome your feedback.
 
