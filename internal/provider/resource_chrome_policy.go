@@ -6,6 +6,7 @@ package googleworkspace
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -17,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"google.golang.org/api/chromepolicy/v1"
+	"google.golang.org/api/googleapi"
 )
 
 func resourceChromePolicy() *schema.Resource {
@@ -332,6 +334,16 @@ func resourceChromePolicyDelete(ctx context.Context, d *schema.ResourceData, met
 
 // Chrome Policies
 
+const chromeDataControlsRulesSchemaName = "chrome.users.DataControlsRules"
+
+func chromePolicySchemaLookupDiagnostics(schemaName, customer string, err error) diag.Diagnostics {
+	var apiErr *googleapi.Error
+	if schemaName == chromeDataControlsRulesSchemaName && errors.As(err, &apiErr) && apiErr.Code == 404 {
+		return diag.Errorf("Chrome policy schema %q is not available for customer %q. Google documents DataControlsRules as available only to users assigned a Chrome Enterprise Premium license. Verify licensing and feature availability for the target users/customer; the provider cannot apply this policy until Google exposes the schema. Original error: %s", schemaName, customer, err)
+	}
+	return diag.FromErr(err)
+}
+
 func validateChromePolicies(ctx context.Context, d *schema.ResourceData, client *apiClient) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -359,7 +371,7 @@ func validateChromePolicies(ctx context.Context, d *schema.ResourceData, client 
 			return retryErr
 		})
 		if err != nil {
-			return diag.FromErr(err)
+			return chromePolicySchemaLookupDiagnostics(schemaName, client.Customer, err)
 		}
 
 		if schemaDef == nil || schemaDef.Definition == nil || schemaDef.Definition.MessageType == nil {

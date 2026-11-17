@@ -21,9 +21,8 @@ import (
 )
 
 const (
-	cloudIdentityPolicyScope = "https://www.googleapis.com/auth/cloud-identity.policies"
-	cloudIdentityPolicyAPI   = "https://cloudidentity.googleapis.com/v1"
-	dlpRuleSettingType       = "settings/rule.dlp"
+	cloudIdentityPolicyAPI = "https://cloudidentity.googleapis.com/v1"
+	dlpRuleSettingType     = "settings/rule.dlp"
 )
 
 type policyAPIError struct {

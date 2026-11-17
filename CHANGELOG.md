@@ -2,10 +2,13 @@
 
 FEATURES:
 
+* **New Data Source:** `googleworkspace_dlp_organization_scope` discovers the Workspace customer-wide scope required by Cloud Identity DLP policies.
+* **New Resource:** `googleworkspace_dlp_detector` manages URL-list, regular-expression, and word-list Workspace DLP detectors through the Cloud Identity Policy API.
 * **New Resource:** `googleworkspace_dlp_rule` manages Workspace DLP rules through the Cloud Identity Policy API.
 * `googleworkspace_dlp_rule` supports organizational-unit, Workspace-group, and advanced CEL policy-query scopes for import and management of existing DLP rules.
 * `googleworkspace_chrome_policy` supports Chrome group policy overrides in addition to organizational unit policies.
 * Chrome policy schema validation accepts repeated/list-valued fields such as `DataControlsRules`.
+* Chrome policy validation gives an actionable Chrome Enterprise Premium licensing hint when the `DataControlsRules` schema is unavailable to a customer.
 
 ## 0.7.0 (June 10, 2022)
 
