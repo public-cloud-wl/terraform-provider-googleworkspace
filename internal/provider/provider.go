@@ -22,6 +22,7 @@ var DefaultClientScopes = []string{
 	"https://www.googleapis.com/auth/gmail.settings.sharing",
 	"https://www.googleapis.com/auth/chrome.management.policy",
 	"https://www.googleapis.com/auth/cloud-platform",
+	cloudIdentityPolicyScope,
 	"https://www.googleapis.com/auth/admin.directory.customer",
 	"https://www.googleapis.com/auth/admin.directory.domain",
 	"https://www.googleapis.com/auth/admin.directory.group",
@@ -133,6 +134,7 @@ func New(version string) func() *schema.Provider {
 			},
 			ResourcesMap: map[string]*schema.Resource{
 				"googleworkspace_chrome_policy":       resourceChromePolicy(),
+				"googleworkspace_dlp_rule":            resourceDlpRule(),
 				"googleworkspace_domain":              resourceDomain(),
 				"googleworkspace_domain_alias":        resourceDomainAlias(),
 				"googleworkspace_gmail_send_as_alias": resourceGmailSendAsAlias(),

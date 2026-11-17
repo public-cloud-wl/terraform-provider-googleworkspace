@@ -22,7 +22,7 @@ import (
 func resourceChromePolicy() *schema.Resource {
 	return &schema.Resource{
 		Description: "Chrome Policy resource in the Terraform Googleworkspace provider. " +
-			"Currently only supports policies not requiring additionalTargetKeys. Chrome Policy Schema " +
+			"Supports organizational unit and group targets, and currently only policies not requiring additionalTargetKeys. Chrome Policy Schema " +
 			"resides under the `https://www.googleapis.com/auth/chrome.management.policy` client scope.",
 
 		CreateContext: resourceChromePolicyCreate,
@@ -32,14 +32,23 @@ func resourceChromePolicy() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"org_unit_id": {
-				Description:      "The target org unit on which this policy is applied.",
+				Description:      "The target org unit on which this policy is applied. Exactly one of `org_unit_id` or `group_id` must be set.",
 				Type:             schema.TypeString,
-				Required:         true,
+				Optional:         true,
 				ForceNew:         true,
+				ExactlyOneOf:     []string{"org_unit_id", "group_id"},
 				DiffSuppressFunc: diffSuppressOrgUnitId,
 			},
+			"group_id": {
+				Description:      "The Google Workspace group ID receiving this policy override. Exactly one of `group_id` or `org_unit_id` must be set.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				ExactlyOneOf:     []string{"org_unit_id", "group_id"},
+				DiffSuppressFunc: diffSuppressChromeGroupId,
+			},
 			"policies": {
-				Description: "Policies to set for the org unit",
+				Description: "Policies to set for the selected org unit or group target",
 				Type:        schema.TypeList,
 				Required:    true,
 				Elem: &schema.Resource{
@@ -81,12 +90,11 @@ func resourceChromePolicyCreate(ctx context.Context, d *schema.ResourceData, met
 		return diags
 	}
 
-	orgUnitId := strings.TrimPrefix(d.Get("org_unit_id").(string), "id:")
-
-	log.Printf("[DEBUG] Creating Chrome Policy for org:%s", orgUnitId)
+	targetResource := chromePolicyTargetResource(d)
+	log.Printf("[DEBUG] Creating Chrome Policy for target:%s", targetResource)
 
 	policyTargetKey := &chromepolicy.GoogleChromePolicyV1PolicyTargetKey{
-		TargetResource: "orgunits/" + orgUnitId,
+		TargetResource: targetResource,
 	}
 
 	diags = validateChromePolicies(ctx, d, client)
@@ -116,17 +124,27 @@ func resourceChromePolicyCreate(ctx context.Context, d *schema.ResourceData, met
 		})
 	}
 
-	err := retryTimeDuration(ctx, time.Minute, func() error {
-		_, retryErr := chromePoliciesService.Orgunits.BatchModify(fmt.Sprintf("customers/%s", client.Customer), &chromepolicy.GoogleChromePolicyV1BatchModifyOrgUnitPoliciesRequest{Requests: requests}).Do()
-		return retryErr
-	})
-
+	var err error
+	if d.Get("group_id").(string) != "" {
+		err = retryTimeDuration(ctx, time.Minute, func() error {
+			return client.batchModifyChromeGroupPolicies(ctx, targetResource, requests)
+		})
+	} else {
+		err = retryTimeDuration(ctx, time.Minute, func() error {
+			_, retryErr := chromePoliciesService.Orgunits.BatchModify(fmt.Sprintf("customers/%s", client.Customer), &chromepolicy.GoogleChromePolicyV1BatchModifyOrgUnitPoliciesRequest{Requests: requests}).Do()
+			return retryErr
+		})
+	}
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Finished creating Chrome Policy for org:%s", orgUnitId)
-	d.SetId(orgUnitId)
+	log.Printf("[DEBUG] Finished creating Chrome Policy for target:%s", targetResource)
+	if d.Get("group_id").(string) != "" {
+		d.SetId(targetResource)
+	} else {
+		d.SetId(strings.TrimPrefix(d.Get("org_unit_id").(string), "id:"))
+	}
 
 	return resourceChromePolicyRead(ctx, d, meta)
 }
@@ -144,10 +162,11 @@ func resourceChromePolicyUpdate(ctx context.Context, d *schema.ResourceData, met
 		return diags
 	}
 
-	log.Printf("[DEBUG] Updating Chrome Policy for org:%s", d.Id())
+	targetResource := chromePolicyTargetResource(d)
+	log.Printf("[DEBUG] Updating Chrome Policy for target:%s", targetResource)
 
 	policyTargetKey := &chromepolicy.GoogleChromePolicyV1PolicyTargetKey{
-		TargetResource: "orgunits/" + d.Id(),
+		TargetResource: targetResource,
 	}
 
 	// Update is achieved by inheriting defaults for the previous policySchemas, and then applying the new set
@@ -164,11 +183,21 @@ func resourceChromePolicyUpdate(ctx context.Context, d *schema.ResourceData, met
 		})
 	}
 
-	err := retryTimeDuration(ctx, time.Minute, func() error {
-		_, retryErr := chromePoliciesService.Orgunits.BatchInherit(fmt.Sprintf("customers/%s", client.Customer), &chromepolicy.GoogleChromePolicyV1BatchInheritOrgUnitPoliciesRequest{Requests: requests}).Do()
-		return retryErr
-	})
-
+	var err error
+	if d.Get("group_id").(string) != "" {
+		var schemaNames []string
+		for _, request := range requests {
+			schemaNames = append(schemaNames, request.PolicySchema)
+		}
+		err = retryTimeDuration(ctx, time.Minute, func() error {
+			return client.batchDeleteChromeGroupPolicies(ctx, targetResource, schemaNames)
+		})
+	} else {
+		err = retryTimeDuration(ctx, time.Minute, func() error {
+			_, retryErr := chromePoliciesService.Orgunits.BatchInherit(fmt.Sprintf("customers/%s", client.Customer), &chromepolicy.GoogleChromePolicyV1BatchInheritOrgUnitPoliciesRequest{Requests: requests}).Do()
+			return retryErr
+		})
+	}
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -179,7 +208,7 @@ func resourceChromePolicyUpdate(ctx context.Context, d *schema.ResourceData, met
 		return diags
 	}
 
-	log.Printf("[DEBUG] Finished Updating Chrome Policy for org:%s", d.Id())
+	log.Printf("[DEBUG] Finished Updating Chrome Policy for target:%s", targetResource)
 
 	return diags
 }
@@ -197,10 +226,11 @@ func resourceChromePolicyRead(ctx context.Context, d *schema.ResourceData, meta 
 		return diags
 	}
 
-	log.Printf("[DEBUG] Getting Chrome Policy for org:%s", d.Id())
+	targetResource := chromePolicyTargetResource(d)
+	log.Printf("[DEBUG] Getting Chrome Policy for target:%s", targetResource)
 
 	policyTargetKey := &chromepolicy.GoogleChromePolicyV1PolicyTargetKey{
-		TargetResource: "orgunits/" + d.Id(),
+		TargetResource: targetResource,
 	}
 
 	policiesObj := []*chromepolicy.GoogleChromePolicyV1PolicyValue{}
@@ -242,7 +272,7 @@ func resourceChromePolicyRead(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Finished getting Chrome Policy for org:%s", d.Id())
+	log.Printf("[DEBUG] Finished getting Chrome Policy for target:%s", targetResource)
 	return nil
 }
 
@@ -259,10 +289,11 @@ func resourceChromePolicyDelete(ctx context.Context, d *schema.ResourceData, met
 		return diags
 	}
 
-	log.Printf("[DEBUG] Deleting Chrome Policy for org:%s", d.Id())
+	targetResource := chromePolicyTargetResource(d)
+	log.Printf("[DEBUG] Deleting Chrome Policy for target:%s", targetResource)
 
 	policyTargetKey := &chromepolicy.GoogleChromePolicyV1PolicyTargetKey{
-		TargetResource: "orgunits/" + d.Id(),
+		TargetResource: targetResource,
 	}
 
 	var requests []*chromepolicy.GoogleChromePolicyV1InheritOrgUnitPolicyRequest
@@ -276,16 +307,26 @@ func resourceChromePolicyDelete(ctx context.Context, d *schema.ResourceData, met
 		})
 	}
 
-	err := retryTimeDuration(ctx, time.Minute, func() error {
-		_, retryErr := chromePoliciesService.Orgunits.BatchInherit(fmt.Sprintf("customers/%s", client.Customer), &chromepolicy.GoogleChromePolicyV1BatchInheritOrgUnitPoliciesRequest{Requests: requests}).Do()
-		return retryErr
-	})
-
+	var err error
+	if d.Get("group_id").(string) != "" {
+		var schemaNames []string
+		for _, request := range requests {
+			schemaNames = append(schemaNames, request.PolicySchema)
+		}
+		err = retryTimeDuration(ctx, time.Minute, func() error {
+			return client.batchDeleteChromeGroupPolicies(ctx, targetResource, schemaNames)
+		})
+	} else {
+		err = retryTimeDuration(ctx, time.Minute, func() error {
+			_, retryErr := chromePoliciesService.Orgunits.BatchInherit(fmt.Sprintf("customers/%s", client.Customer), &chromepolicy.GoogleChromePolicyV1BatchInheritOrgUnitPoliciesRequest{Requests: requests}).Do()
+			return retryErr
+		})
+	}
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Finished deleting Chrome Policy for org:%s", d.Id())
+	log.Printf("[DEBUG] Finished deleting Chrome Policy for target:%s", targetResource)
 	return nil
 }
 
@@ -360,7 +401,7 @@ func validateChromePolicies(ctx context.Context, d *schema.ResourceData, client 
 					})
 				}
 
-				validType := validatePolicyFieldValueType(schemaField.Type, polVal)
+				validType := validatePolicyFieldValueType(schemaField.Type, schemaField.Label, polVal)
 				if !validType {
 					return append(diags, diag.Diagnostic{
 						Summary:  fmt.Sprintf("value provided for %s is of incorrect type (expected type: %s)", schemaField.Name, schemaField.Type),
@@ -375,7 +416,20 @@ func validateChromePolicies(ctx context.Context, d *schema.ResourceData, client 
 }
 
 // This will take a value and validate whether the type is correct
-func validatePolicyFieldValueType(fieldType string, fieldValue interface{}) bool {
+func validatePolicyFieldValueType(fieldType, fieldLabel string, fieldValue interface{}) bool {
+	if fieldLabel == "LABEL_REPEATED" {
+		values := reflect.ValueOf(fieldValue)
+		if values.Kind() != reflect.Slice && values.Kind() != reflect.Array {
+			return false
+		}
+		for i := 0; i < values.Len(); i++ {
+			if !validatePolicyFieldValueType(fieldType, "", values.Index(i).Interface()) {
+				return false
+			}
+		}
+		return true
+	}
+
 	valid := false
 
 	switch fieldType {

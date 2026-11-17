@@ -26,13 +26,15 @@ import (
 type apiClient struct {
 	client *http.Client
 
-	AccessToken           string
-	ClientScopes          []string
-	Credentials           string
-	Customer              string
-	ImpersonatedUserEmail string
-	ServiceAccount        string
-	UserAgent             string
+	AccessToken            string
+	ClientScopes           []string
+	Credentials            string
+	Customer               string
+	ImpersonatedUserEmail  string
+	ServiceAccount         string
+	UserAgent              string
+	PolicyAPIBaseURL       string
+	ChromePolicyAPIBaseURL string
 }
 
 func (c *apiClient) loadAndValidate(ctx context.Context) diag.Diagnostics {

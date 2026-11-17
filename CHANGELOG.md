@@ -1,4 +1,12 @@
 ## 0.8.0 (Unreleased)
+
+FEATURES:
+
+* **New Resource:** `googleworkspace_dlp_rule` manages Workspace DLP rules through the Cloud Identity Policy API.
+* `googleworkspace_dlp_rule` supports organizational-unit, Workspace-group, and advanced CEL policy-query scopes for import and management of existing DLP rules.
+* `googleworkspace_chrome_policy` supports Chrome group policy overrides in addition to organizational unit policies.
+* Chrome policy schema validation accepts repeated/list-valued fields such as `DataControlsRules`.
+
 ## 0.7.0 (June 10, 2022)
 
 FEATURES:
